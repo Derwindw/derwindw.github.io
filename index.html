@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title data-i18n="pageTitle">Generador de Tarjetas de Crédito</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .card {
+            background-color: white;
+            padding: 2.5rem;
+            border-radius: 1.5rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            width: 100%;
+            max-width: 500px;
+        }
+        .message-box {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #10b981;
+            color: white;
+            padding: 1rem 2rem;
+            border-radius: 9999px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: opacity 0.5s ease-in-out, transform 0.5s ease-in-out;
+            opacity: 0;
+            z-index: 1000;
+        }
+        .message-box.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+        .valid {
+            color: #10b981;
+        }
+        .invalid {
+            color: #ef4444;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="message-box" class="message-box"></div>
+
+    <div class="card">
+        <h1 class="text-3xl font-bold text-center text-gray-800 mb-6" data-i18n="mainTitle">Generador de Tarjetas</h1>
+        
+        <div class="mb-6">
+            <label for="cardType" class="block text-sm font-medium text-gray-700 mb-2" data-i18n="cardTypeLabel">Tipo de Tarjeta:</label>
+            <select id="cardType" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                <option value="Visa">Visa</option>
+                <option value="MasterCard">MasterCard</option>
+                <option value="American Express">American Express</option>
+                <option value="Discover">Discover</option>
+            </select>
+        </div>
+
+        <button id="generateBtn" class="w-full bg-blue-600 text-white font-bold py-3 px-4 rounded-lg shadow-md hover:bg-blue-700 transition duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2" data-i18n="generateButton">
+            Generar Tarjeta
+        </button>
+
+        <div class="mt-8 space-y-4">
+            <!-- Contenedor del número de tarjeta -->
+            <div id="cardNumberContainer" class="flex items-center justify-between bg-gray-100 p-4 rounded-md shadow-inner transition-opacity duration-300 opacity-0">
+                <div>
+                    <span class="block text-xs font-semibold text-gray-500" data-i18n="cardNumberLabel">Número de Tarjeta</span>
+                    <span id="cardNumber" class="block text-lg font-mono text-gray-800 break-all" data-raw-number=""></span>
+                </div>
+                <button onclick="copyToClipboard('cardNumber')" class="ml-4 bg-gray-300 text-gray-800 p-2 rounded-full hover:bg-gray-400 transition">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                        <path d="M8 3a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z" />
+                        <path d="M6 3a2 2 0 00-2 2v11a2 2 0 002 2h8a2 2 0 002-2V5a2 2 0 00-2-2 3 3 0 013 3v11a3 3 0 01-3 3H6a3 3 0 01-3-3V5a3 3 0 013-3h2z" />
+                    </svg>
+                </button>
+            </div>
+            
+            <!-- Contenedor de la fecha de vencimiento -->
+            <div id="expirationDateContainer" class="flex items-center justify-between bg-gray-100 p-4 rounded-md shadow-inner transition-opacity duration-300 opacity-0">
+                <div>
+                    <span class="block text-xs font-semibold text-gray-500" data-i18n="expirationDateLabel">Fecha de Vencimiento</span>
+                    <span id="expirationDate" class="block text-lg font-mono text-gray-800"></span>
+                </div>
+                <button onclick="copyToClipboard('expirationDate')" class="ml-4 bg-gray-300 text-gray-800 p-2 rounded-full hover:bg-gray-400 transition">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                        <path d="M8 3a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z" />
+                        <path d="M6 3a2 2 0 00-2 2v11a2 2 0 002 2h8a2 2 0 002-2V5a2 2 0 00-2-2 3 3 0 013 3v11a3 3 0 01-3 3H6a3 3 0 01-3-3V5a3 3 0 013-3h2z" />
+                    </svg>
+                </button>
+            </div>
+            
+            <!-- Contenedor del CVC -->
+            <div id="cvcContainer" class="flex items-center justify-between bg-gray-100 p-4 rounded-md shadow-inner transition-opacity duration-300 opacity-0">
+                <div>
+                    <span class="block text-xs font-semibold text-gray-500" data-i18n="cvcLabel">CVC</span>
+                    <span id="cvc" class="block text-lg font-mono text-gray-800"></span>
+                </div>
+                <button onclick="copyToClipboard('cvc')" class="ml-4 bg-gray-300 text-gray-800 p-2 rounded-full hover:bg-gray-400 transition">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                        <path d="M8 3a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z" />
+                        <path d="M6 3a2 2 0 00-2 2v11a2 2 0 002 2h8a2 2 0 002-2V5a2 2 0 00-2-2 3 3 0 013 3v11a3 3 0 01-3 3H6a3 3 0 01-3-3V5a3 3 0 013-3h2z" />
+                    </svg>
+                </button>
+            </div>
+            
+            <!-- Contenedor del estado de validación Luhn -->
+            <div id="luhnContainer" class="flex items-center justify-between bg-gray-100 p-4 rounded-md shadow-inner transition-opacity duration-300 opacity-0">
+                <div>
+                    <span class="block text-xs font-semibold text-gray-500" data-i18n="luhnValidationLabel">Validación Luhn</span>
+                    <span id="luhnStatus" class="block text-lg font-mono text-gray-800"></span>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Mapeo de tipos de tarjeta a sus prefijos y longitudes
+        const CARD_PATTERNS = {
+            'Visa': { prefixes: ['4'], length: 16, format: [4, 4, 4, 4] },
+            'MasterCard': { prefixes: ['51', '52', '53', '54', '55'], length: 16, format: [4, 4, 4, 4] },
+            'American Express': { prefixes: ['34', '37'], length: 15, format: [4, 6, 5] },
+            'Discover': { prefixes: ['6011', '644', '65'], length: 16, format: [4, 4, 4, 4] }
+        };
+
+        // Traducciones para los elementos de la interfaz
+        const translations = {
+            es: {
+                pageTitle: 'Generador de Tarjetas de Crédito',
+                mainTitle: 'Generador de Tarjetas',
+                cardTypeLabel: 'Tipo de Tarjeta:',
+                generateButton: 'Generar Tarjeta',
+                cardNumberLabel: 'Número de Tarjeta',
+                expirationDateLabel: 'Fecha de Vencimiento',
+                cvcLabel: 'CVC',
+                luhnValidationLabel: 'Validación Luhn',
+                validStatus: 'Válido',
+                invalidStatus: 'Inválido',
+                copiedMessage: '¡Copiado al portapapeles!',
+                copyError: 'Error al copiar.'
+            },
+            en: {
+                pageTitle: 'Credit Card Generator',
+                mainTitle: 'Card Generator',
+                cardTypeLabel: 'Card Type:',
+                generateButton: 'Generate Card',
+                cardNumberLabel: 'Card Number',
+                expirationDateLabel: 'Expiration Date',
+                cvcLabel: 'CVC',
+                luhnValidationLabel: 'Luhn Validation',
+                validStatus: 'Valid',
+                invalidStatus: 'Invalid',
+                copiedMessage: 'Copied to clipboard!',
+                copyError: 'Error copying.'
+            }
+        };
+
+        // Función para establecer el idioma de la interfaz
+        function setLanguage() {
+            const lang = navigator.language.startsWith('es') ? 'es' : 'en';
+            const currentTranslations = translations[lang];
+
+            // Actualizar todos los elementos con el atributo data-i18n
+            document.querySelectorAll('[data-i18n]').forEach(element => {
+                const key = element.getAttribute('data-i18n');
+                if (currentTranslations[key]) {
+                    element.textContent = currentTranslations[key];
+                }
+            });
+
+            // Actualizar el título de la página
+            document.title = currentTranslations.pageTitle;
+        }
+
+        // Llamar a la función al cargar la página
+        window.onload = setLanguage;
+        
+        // Elementos del DOM
+        const generateBtn = document.getElementById('generateBtn');
+        const cardTypeSelect = document.getElementById('cardType');
+        const cardNumberElement = document.getElementById('cardNumber');
+        const expirationDateElement = document.getElementById('expirationDate');
+        const cvcElement = document.getElementById('cvc');
+        const cardNumberContainer = document.getElementById('cardNumberContainer');
+        const expirationDateContainer = document.getElementById('expirationDateContainer');
+        const cvcContainer = document.getElementById('cvcContainer');
+        const luhnContainer = document.getElementById('luhnContainer');
+        const luhnStatusElement = document.getElementById('luhnStatus');
+        const messageBox = document.getElementById('message-box');
+
+        // Función principal para manejar la generación
+        generateBtn.addEventListener('click', () => {
+            const selectedType = cardTypeSelect.value;
+            const cardInfo = generateCreditCard(selectedType);
+            const lang = navigator.language.startsWith('es') ? 'es' : 'en';
+
+            // Formatea el número para visualización
+            const formattedNumber = formatCardNumber(cardInfo.number, CARD_PATTERNS[selectedType].format);
+            
+            // Actualiza la UI con los valores generados
+            cardNumberElement.textContent = formattedNumber;
+            cardNumberElement.dataset.rawNumber = cardInfo.number; // Guarda el número sin formato para copiar
+            expirationDateElement.textContent = cardInfo.expirationDate;
+            cvcElement.textContent = cardInfo.cvc;
+
+            // Realiza la validación Luhn y actualiza el estado
+            const isValid = validateLuhn(cardInfo.number);
+            luhnStatusElement.textContent = isValid ? translations[lang].validStatus : translations[lang].invalidStatus;
+            luhnStatusElement.className = isValid ? 'block text-lg font-mono valid' : 'block text-lg font-mono invalid';
+            
+            // Muestra los contenedores de resultados con un efecto de desvanecimiento
+            cardNumberContainer.style.opacity = '1';
+            expirationDateContainer.style.opacity = '1';
+            cvcContainer.style.opacity = '1';
+            luhnContainer.style.opacity = '1';
+        });
+
+        /**
+         * Genera un número de tarjeta de crédito completo, fecha de vencimiento y CVC.
+         * @param {string} type - El tipo de tarjeta a generar.
+         * @returns {object} Un objeto con los detalles de la tarjeta.
+         */
+        function generateCreditCard(type) {
+            const pattern = CARD_PATTERNS[type];
+            const prefix = pattern.prefixes[Math.floor(Math.random() * pattern.prefixes.length)];
+            const length = pattern.length;
+
+            let number = prefix;
+            while (number.length < length - 1) {
+                number += Math.floor(Math.random() * 10).toString();
+            }
+
+            // Calcula el último dígito usando el algoritmo de Luhn
+            const luhnCheckDigit = generateLuhnCheckDigit(number);
+            number += luhnCheckDigit.toString();
+
+            const expirationDate = generateExpirationDate();
+            const cvc = generateCVC(type);
+
+            return {
+                number,
+                expirationDate,
+                cvc
+            };
+        }
+
+        /**
+         * Formatea el número de tarjeta con espacios para una mejor visualización.
+         * @param {string} number - El número de tarjeta sin formato.
+         * @param {array} format - Un array que define la longitud de cada grupo de dígitos.
+         * @returns {string} El número formateado.
+         */
+        function formatCardNumber(number, format) {
+            let result = '';
+            let current = 0;
+            for (let i = 0; i < format.length; i++) {
+                const groupLength = format[i];
+                result += number.substring(current, current + groupLength);
+                current += groupLength;
+                if (i < format.length - 1) {
+                    result += ' ';
+                }
+            }
+            return result;
+        }
+
+        /**
+         * Calcula el dígito de control de Luhn para un número parcial.
+         * @param {string} partialNumber - El número sin el dígito de control final.
+         * @returns {number} El dígito de control de Luhn.
+         */
+        function generateLuhnCheckDigit(partialNumber) {
+            let sum = 0;
+            let isSecondDigit = false;
+            for (let i = partialNumber.length - 1; i >= 0; i--) {
+                let digit = parseInt(partialNumber.charAt(i), 10);
+                if (isSecondDigit) {
+                    digit *= 2;
+                    if (digit > 9) {
+                        digit -= 9;
+                    }
+                }
+                sum += digit;
+                isSecondDigit = !isSecondDigit;
+            }
+            return (sum * 9) % 10;
+        }
+        
+        /**
+         * Valida un número completo de tarjeta de crédito utilizando el algoritmo de Luhn.
+         * @param {string} cardNumber - El número de tarjeta completo (sin espacios).
+         * @returns {boolean} Verdadero si es válido, falso en caso contrario.
+         */
+        function validateLuhn(cardNumber) {
+            let sum = 0;
+            let isSecond = false;
+            for (let i = cardNumber.length - 1; i >= 0; i--) {
+                let digit = parseInt(cardNumber.charAt(i), 10);
+                if (isSecond) {
+                    digit *= 2;
+                }
+                sum += (digit > 9) ? (digit - 9) : digit;
+                isSecond = !isSecond;
+            }
+            return (sum % 10) === 0;
+        }
+
+
+        /**
+         * Genera una fecha de vencimiento válida (MM/AA).
+         * @returns {string} La fecha de vencimiento formateada.
+         */
+        function generateExpirationDate() {
+            const today = new Date();
+            const currentYear = today.getFullYear() % 100;
+            const currentMonth = today.getMonth() + 1;
+
+            let year = currentYear + Math.floor(Math.random() * 6); // Hasta 5 años en el futuro
+            let month = Math.floor(Math.random() * 12) + 1;
+
+            if (year === currentYear && month < currentMonth) {
+                month = currentMonth + Math.floor(Math.random() * (12 - currentMonth + 1));
+            }
+
+            const formattedMonth = month < 10 ? '0' + month : month;
+            const formattedYear = year < 10 ? '0' + year : year;
+
+            return `${formattedMonth}/${formattedYear}`;
+        }
+
+        /**
+         * Genera un CVC basado en el tipo de tarjeta.
+         * @param {string} type - El tipo de tarjeta.
+         * @returns {string} El CVC generado.
+         */
+        function generateCVC(type) {
+            const length = type === 'American Express' ? 4 : 3;
+            let cvc = '';
+            for (let i = 0; i < length; i++) {
+                cvc += Math.floor(Math.random() * 10).toString();
+            }
+            return cvc;
+        }
+
+        /**
+         * Copia texto de un elemento específico al portapapeles y muestra un mensaje.
+         * @param {string} elementId - El ID del elemento del que copiar.
+         */
+        function copyToClipboard(elementId) {
+            const element = document.getElementById(elementId);
+            // Si el elemento es el número de tarjeta, copia el número sin formato
+            const textToCopy = (elementId === 'cardNumber') ? element.dataset.rawNumber : element.textContent;
+            const lang = navigator.language.startsWith('es') ? 'es' : 'en';
+
+            // Usa el método antiguo y más fiable para iframes
+            const textarea = document.createElement('textarea');
+            textarea.value = textToCopy;
+            document.body.appendChild(textarea);
+            textarea.select();
+            
+            try {
+                const successful = document.execCommand('copy');
+                if (successful) {
+                    showMessage(translations[lang].copiedMessage);
+                } else {
+                    showMessage(translations[lang].copyError);
+                }
+            } catch (err) {
+                showMessage(translations[lang].copyError);
+            } finally {
+                document.body.removeChild(textarea);
+            }
+        }
+        
+        /**
+         * Muestra una caja de mensaje temporal en la pantalla.
+         * @param {string} message - El mensaje a mostrar.
+         */
+        function showMessage(message) {
+            messageBox.textContent = message;
+            messageBox.classList.add('show');
+            setTimeout(() => {
+                messageBox.classList.remove('show');
+            }, 2000);
+        }
+
+    </script>
+</body>
+</html>
